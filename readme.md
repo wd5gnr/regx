@@ -6,7 +6,7 @@ Simple script to convert things like:
    
 Into:
 
-    ^[[:digit:]]{5}[[:space:]] +[[:digit:]]{2,5}
+    ^[[:digit:]]{5}[[:space:]]+[[:digit:]]{2,5}
    
 Use it as a command expansion:
 
