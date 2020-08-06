@@ -1,0 +1,191 @@
+#!/bin/bash
+
+# Literate regular expressions -- Williams, Hackaday
+
+# Escape a string for normal regular expression
+function reesc {
+  local s="$1"
+  local s2
+  local c
+  s2="${s/\\/\\\\}"   # escape backslash
+  for c in \. \^ \[ \$ \? \* \+  \| \( \) \{ \   # do the rest
+  do
+    s2="${s2/"$c"/"\\$c"}"
+  done
+  echo "$s2"
+}
+
+# escape characters in a class
+# for bash, really nothing needs an escape
+# because everything is a literal
+# we COULD (but don't) find things like - and ^ and make sure they are in
+# illegal positions (e.g., [-f] matches dash or f. Or [xyz^] matches x, y, z, or caret
+# For now we don't do anything here
+function reescclass {
+  echo "$1"
+}
+
+# Here we scan each argument and convert it to a regexp
+while [ $# -ne 0 ]
+do
+  case "$1" in
+  any_char)
+   token="."
+   ;;
+   
+  zero_or_more)
+   token='*'
+   ;;
+
+  one_or_more)
+    token="+"
+    ;;
+
+  start)
+    token="^"
+    ;;
+
+  end)
+    token="$"
+    ;;
+
+  cr)
+    token="\\r"
+    ;;
+
+  lf)
+    token="\\n"
+    ;;
+
+  tab)
+    token="\\t"
+    ;;
+
+  bell)
+    token="\\a"
+    ;;
+
+  esc)
+    token="\\e"
+    ;;
+
+  ff)
+    token="\\f"
+    ;;
+
+  vt)
+    token="\\v"
+    ;;
+
+  digit)
+    token="[[:digit:]]"
+    ;;
+
+  not_digit)
+   token="[^[:digit:]]"
+   ;;
+   
+  alpha)
+    token="[[:alpha:]]"
+    ;;
+
+  not_alpha)
+    token="[^[:alpha:]]"
+    ;;
+
+  blank)
+    token="[[:blank:]]";
+    ;;
+
+  not_blank)
+      token="[^[:blank:]]"
+      ;;
+  
+# could do others here like :cntrl: :graph: :lower: :upper: :print: :punct: :xdigit:
+  # you could also do macros like
+  # zipcode - [[:digit:]]{5}(-[[:digit:]]{4})?
+
+  space)
+    token="[[:space:]]"
+    ;;
+    
+  not_space)
+    token="[^[:space]]"
+    ;;
+    
+  or)
+    token="|"
+    ;;
+    
+  optional)
+    token='?'
+    ;;
+    
+  open_group)
+    token="("
+    ;;
+
+  close_group)
+    token=")"
+    ;;
+  
+  any_of)
+    token="[$(reescclass "$2")]"
+    shift
+    ;;
+
+  none_of)
+    token="[^$(reescclass "$2")]"
+    shift
+    ;;
+    
+  group)
+    token="($(reesc "$2"))"
+    shift
+    ;;
+
+  hex)
+    token="\x$2"
+    shift
+    ;;
+
+  repeat)
+    token="{$2}"
+    shift
+    ;;
+
+  at_least)
+    token="{$2,}"
+    shift
+    ;;
+
+  # you can use literal for things that would otherwise get read
+  # For example, literal ?  -or- literal range
+  literal)
+    token=$(reesc "$1")  
+    shift
+    ;;
+
+  range)
+    token="$2-$3"
+    shift
+    shift
+    ;;
+
+  repeats)
+    token="{$2,$3}"
+    shift
+    shift
+    ;;
+
+  # this case catches everything else
+  # so if you want to find the word hackaday it winds up here
+  *)
+   token=$(reesc "$1")
+   ;;
+  
+esac
+echo -n "$token"   # write out what we have so far (no newline)
+shift
+done
+echo   # finally a new line

@@ -1,0 +1,19 @@
+#!/bin/bash
+REGX=./regx   # set path to match
+ARGS=
+# get the regexp in $ARGS
+while [ $# -ne 0 -a "$1" !=  -- ]
+do
+    ARGS+="${1@Q} "   # quote for shell and add space
+    shift
+done
+shift # eat %END
+if [ -z "$ARGS" ] # Must have some regexp
+then
+  echo usage: litgrep \<expression\> -- [egrep_ options...] [files...]
+  exit 1
+fi
+# Convert to real regexp
+RELIST=$(eval $REGX $ARGS )
+# go
+exec egrep "${RELIST}" $@ 
